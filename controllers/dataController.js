@@ -43,6 +43,7 @@ exports.getData = async (req, res) => {
       },
     ];
     const opensByCountriesResults = await Event.aggregate(opensByCountriesPipeline);
+    console.log(opensByCountriesResults)
     const opensByCountries = {};
     opensByCountriesResults.forEach(result => {
       opensByCountries[result._id] = result.count;
