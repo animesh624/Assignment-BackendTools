@@ -5,6 +5,10 @@ app.use(express.json());
 // .env configuration
 require('dotenv').config()
 
+//cors
+var cors = require('cors')
+app.use(cors())
+
 //Database connection
 const connectDatabase=require('./config/database');
 connectDatabase();
