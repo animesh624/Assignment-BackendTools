@@ -94,3 +94,56 @@ exports.getData = async (req,res)=>{
         res.status(500).send('Error fetching metrics');
       }
 }
+
+exports.getData2 = async (req,res)=>{
+  try {
+    const events = await Event.find();
+
+    // Calculate opens by countries
+    const opensByCountries = {};
+    events.forEach(event => {
+      const country = event.geo_ip.country;
+      opensByCountries[country] = (opensByCountries[country] || 0) + 1;
+    });
+
+    // Calculate opens by device
+    const opensByDevice = { desktop: 0, mobile: 0, tablet: 0 };
+    events.forEach(event => {
+      const deviceType = event.user_agent_parsed.is_mobile
+        ? 'mobile'
+        : event.user_agent_parsed.is_tablet
+        ? 'tablet'
+        : 'desktop';
+      opensByDevice[deviceType]++;
+    });
+
+    // Calculate timeseries
+    const timeseriesMap = new Map();
+    events.forEach(event => {
+      const injectionTime = event.injection_time;
+      if (!timeseriesMap.has(injectionTime)) {
+        timeseriesMap.set(injectionTime, 0);
+      }
+      timeseriesMap.set(injectionTime, timeseriesMap.get(injectionTime) + 1);
+    });
+
+    const timeseries = [];
+    timeseriesMap.forEach((count, injectionTime) => {
+      timeseries.push({
+        totalOpens: count,
+        time: injectionTime,
+      });
+    });
+
+    // Construct and send the metrics response
+    const metrics = {
+      opens_by_countries: opensByCountries,
+      opens_by_device: opensByDevice,
+      timeseries: timeseries,
+    };
+    res.json(metrics);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error fetching metrics');
+  }
+}
