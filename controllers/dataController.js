@@ -101,12 +101,30 @@ exports.getData = async (req, res) => {
       count: result.count
     }));
 
+    const friendlyFromPipeline1 = [
+      {
+        $group: {
+          _id: '$friendly_from',
+          count: { $sum: 1 },
+          uniqueCountry: { $addToSet: '$geo_ip.country' },
+        },
+      },
+    ];
+
+    const friendlyFromResults1 = await Event.aggregate(friendlyFromPipeline1);
+    const friendlyFrom1 = friendlyFromResults1.map(result => ({
+      Email: result._id,
+      count: result.count,
+      uniqueCountry: result.uniqueCountry,
+    }));
+
     // Construct and send the metrics response
     const metrics = {
       opens_by_countries: opensByCountries,
       opens_by_device: opensByDevice,
       timeseries: timeseries,
-      friendly_from: friendlyFrom
+      friendly_from: friendlyFrom,
+      friendly_from_country: friendlyFrom1
     };
     res.json(metrics);
   } catch (error) {
